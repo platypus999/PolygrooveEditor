@@ -6,6 +6,7 @@
 #include <algorithm>
 #include "Rational.hpp"
 #include "JsonWriter.hpp"
+#include "GUIWindow.h"
 
 //譜面データのクラス
 class Chart {
@@ -131,6 +132,15 @@ public:
 	const String modeTextColor = U"#00FF00";
 	//プレイ画面のノーツの太さ(+-delta)
 	const double notePlayDelta = 5;
+	//選択されている小節の色
+	const String selectMeasureColor = U"#1E90FF";
+	//選択されている小節の色の透明度
+	const uint32 selectMeasureAlpha = 31;
+	//小節ウィンドウのボタンの文字列
+	const String buttonStringCopy = U"Copy";
+	const String buttonStringCut = U"Cut";
+	const String buttonStringPaste = U"Paste";
+	const String buttonStringClear = U"Clear";
 
 
 private:
@@ -155,7 +165,12 @@ private:
 	TextEditState tesGranularity;
 	TextEditState tesNowNoteString;
 	TextEditState tesNowDispString;
-	//GUIウィンドウ
+	//小節情報のGUIウィンドウ
+	GUIWindow measureEditWindow;
+	//編集している小節情報の番号
+	int measureEditIndex;
+	//編集している小節情報の選択範囲にかぶる一番最後の番号
+	int measureSelectUntilIndex;
 	
 	//クリックすると配置される装飾の文字列
 	String nowDispString;
@@ -177,6 +192,12 @@ private:
 	double startPlayClock;
 	//ストップウォッチ
 	Stopwatch stopwatch;
+	//コピーした小節情報のデータ
+	std::vector<std::map<String, String>>copyboardMeasureAttribute;
+	std::vector<std::vector<std::map<Quot, String>>>copyboardLaneNoteData;
+	std::vector<std::vector<std::map<Quot, String>>>copyboardLaneDisplayData;
+	std::vector<std::vector<std::map<Quot, Quot>>>copyboardDivPositionData;
+	std::vector<std::vector<std::map<Quot, Quot>>>copyboardDivVelocityData;
 
 	//----------------------------------------
 	//直接的なデータ

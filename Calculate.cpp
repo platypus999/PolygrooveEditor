@@ -15,6 +15,8 @@ void Chart::calculate() {
 	tickTime.clear();
 	tickTimeReal.clear();
 
+	//小節数を合わせる
+	measureNum = measureAttribute.size();
 
 	//小節自体のデータについて計算する
 	//各小節の時間を累積和する

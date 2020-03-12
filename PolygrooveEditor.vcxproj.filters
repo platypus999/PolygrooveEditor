@@ -117,7 +117,7 @@
     <ClCompile Include="Show.cpp">
       <Filter>Source Files\Chart</Filter>
     </ClCompile>
-    <ClCompile Include="GUIWindow.cpp">
+    <ClCompile Include="GUIWindow.h">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

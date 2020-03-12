@@ -17,6 +17,8 @@ Chart::Chart()
 	ghostNoteTime = (Quot(0, 1));
 	fileName = (U"");
 	isPlaying = false;
+	measureEditIndex = -1;
+	measureSelectUntilIndex = -1;
 
 	//ソフト起動直後のデータ
 	measureNum = 10;

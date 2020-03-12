@@ -46,10 +46,10 @@
     <LinkIncremental>true</LinkIncremental>
     <IncludePath>$(SIV3D_0_4_1)\include;$(SIV3D_0_4_1)\include\ThirdParty;$(IncludePath)</IncludePath>
     <LibraryPath>$(SIV3D_0_4_1)\lib\Windows;$(LibraryPath)</LibraryPath>
-    <OutDir>$(SolutionDir)Intermediate\$(ProjectName)\Debug\</OutDir>
-    <IntDir>$(SolutionDir)Intermediate\$(ProjectName)\Debug\Intermediate\</IntDir>
     <TargetName>$(ProjectName)(debug)</TargetName>
     <LocalDebuggerWorkingDirectory>$(ProjectDir)App</LocalDebuggerWorkingDirectory>
+    <OutDir>\Debug\</OutDir>
+    <IntDir>Debug\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
@@ -73,6 +73,7 @@
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <MinimalRebuild>false</MinimalRebuild>
       <ConformanceMode>true</ConformanceMode>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -110,7 +111,7 @@
   <ItemGroup>
     <ClCompile Include="Calculate.cpp" />
     <ClCompile Include="Chart.cpp" />
-    <ClCompile Include="GUIWindow.cpp" />
+    <ClCompile Include="GUIWindow.h" />
     <ClCompile Include="JSONWriter.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="ReadFromFile.cpp" />

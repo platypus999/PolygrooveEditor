@@ -281,6 +281,10 @@ void Chart::ShowEditor() const {
 			Circle(Vec2(toX(theta - Quot(1, 1)), toY(timeBegin)), divJointRadius).draw(c);
 		}
 	}
+	//選択している小節範囲を描画
+	if (measureEditIndex >= 0 && measureSelectUntilIndex >= 0) {
+		Rect(leftMargin, toY(imosTime[measureSelectUntilIndex + 1]), editSpaceWidth, toY(imosTime[measureEditIndex]) - toY(imosTime[measureSelectUntilIndex + 1])).draw(Color(selectMeasureColor).setA(selectMeasureAlpha));
+	}
 	//左の小節情報の描画
 	Rect({ 0, 0 }, { leftMargin, editSpaceHeight }).draw(Color(leftMarginColor));
 	for (auto measure : step(measureNum)) {
@@ -304,8 +308,8 @@ void Chart::ShowEditor() const {
 		infoFont(isLaneMode ? U"LANE MODE" : U"DIV MODE").draw(0, editSpaceHeight - infoFont.ascent(), Color(modeTextColor));
 
 	}
-	else {
+	if (!isTabMenu) {
 		//タブメニューがない場合、小節情報編集GUIを追加
-
+		measureEditWindow.draw();
 	}
 }

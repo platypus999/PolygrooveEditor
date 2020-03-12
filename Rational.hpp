@@ -41,6 +41,17 @@ struct Rational {
 		denom = *parsed[1];
 		reduce();
 	}
+	static bool isParsable(String str) {
+		auto list = str.split(U'/');
+		if (list.size() != 2) {
+			return false;
+		}
+		auto parsed = list.map([](auto&& s) {return ParseIntOpt<int>(s); });
+		if (!parsed[0] || !parsed[1] || parsed[1] == 0) {
+			return false;
+		}
+		return true;
+	}
 private:
 	Integer numer, denom;
 	void reduce() {

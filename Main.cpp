@@ -5,7 +5,7 @@
 
 void Main()
 {
-	Chart chart{};
+	Chart chart;
 
 	while (System::Update()) {
 		chart.Show();
