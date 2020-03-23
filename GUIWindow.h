@@ -21,12 +21,14 @@ private:
 	Vec2 size;
 	//すでに閉じられたウィンドウか
 	bool isDead;
+	//テキストボックスがアクティブかどうか
+	bool textboxActiveFlag;
 	//ラベルのフォント
 	const Font font = Font(15);
 	//ウィンドウの背景色
 	const Color windowColor = Palette::Gray;
 public:
-	GUIWindow(Point position = Point(0, 0)) :position(position) { isDead = true; }
+	GUIWindow(Point position = Point(0, 0)) :position(position) { isDead = true; textboxActiveFlag = false; }
 
 	//ウィンドウの存在フラグを変える
 	void deadFlag(bool isDead) {
@@ -88,8 +90,8 @@ public:
 	}
 
 	//テキストボックスを更新する
-	bool update() {
-		bool isTextboxActive = false;
+	void update() {
+		textboxActiveFlag = false;
 		if (!isDead) {
 			double magnifier = 0.5;
 			const Transformer2D transformer(Mat3x2::Scale(magnifier, magnifier), Mat3x2::Scale(magnifier, magnifier));
@@ -103,7 +105,7 @@ public:
 				int xPlus = font(info + U": ").region().w;
 				SimpleGUI::TextBox(tesArray[yIndex], (position + Vec2(xPlus, -ascent * (yIndex + 1) - 2)) / magnifier, 150);
 				if (tesArray[yIndex].active) {
-					isTextboxActive = true;
+					textboxActiveFlag = true;
 				}
 				yIndex++;
 			}
@@ -115,7 +117,11 @@ public:
 				buttonFlag[info] = isPushed;
 			}
 		}
-		return isTextboxActive;
+	}
+
+	//テキストボックスがアクティブかどうかを返す
+	bool isTextboxActive() {
+		return textboxActiveFlag;
 	}
 
 	//左下の位置を変更する

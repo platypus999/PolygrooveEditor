@@ -1,5 +1,6 @@
 
 #include "Chart.hpp"
+#include <set>
 
 void Chart::Update() {
 	//再生されていないときは、画面を表示する
@@ -18,11 +19,16 @@ void Chart::Update() {
 				//先頭から再生開始
 				startPlayClock = 0.;
 			}
-			currentPlayClock = startPlayClock;
+			previousPlayClock = currentPlayClock = startPlayClock;
 			stopwatch.restart();
+			//コンボは0から
+			comboCounter = 0;
+			//曲を再生開始
+			backgroundMusic.play();
 		}
 		else {
-			//再生終了
+			//曲を再生終了
+			backgroundMusic.stop();
 		}
 		isPlaying = !isPlaying;
 	}
@@ -31,6 +37,7 @@ void Chart::Update() {
 void Chart::UpdatePlayer() {
 	//今のミリ秒数を反映する
 	int duration = stopwatch.ms();
+	previousPlayClock = currentPlayClock;
 	currentPlayClock = startPlayClock + duration;
 	//譜面を最後まで表示し終えたら元の画面に戻る
 	if (currentPlayClock >= imosClock.back().first) {
@@ -61,6 +68,7 @@ void Chart::UpdateEditor() {
 		scrollTime -= Quot(int(Mouse::Wheel())) * scrollSpeed * Quot(maxPixelPerTime / pixelPerTime, 1);
 		scrollTime = Clamp(scrollTime, Quot(0, 1), imosTime.back());
 	}
+
 
 	//Tabでタブメニューを開閉する
 	if (KeyTab.down())isTabMenu = !isTabMenu;
@@ -118,13 +126,110 @@ void Chart::UpdateEditor() {
 		else {
 			//Divモードの時
 			//分割線の編集線上にある情報を描画
+			for (int index = 0; index < divNum; index++) {
+				SimpleGUI::CheckBox(divEditIndex[index], Format(U"Div ", index), Vec2(20, 200 + 40 * index), 216);
+			}
+
+			int measureIndex = upper_bound(imosTime.begin(), imosTime.end(), divEditLineTime) - imosTime.begin() - 1;
+			auto posFlag = [&](int lane) {return divPositionData[measureIndex][lane].count(divEditLineTime - imosTime[measureIndex]); };
+			auto velFlag = [&](int lane) {return divVelocityData[measureIndex][lane].count(divEditLineTime - imosTime[measureIndex]); };
+			auto posInfo = [&](int lane) {return divPositionData[measureIndex][lane][divEditLineTime - imosTime[measureIndex]]; };
+			auto velSub = [&](int lane, Quot q) { divVelocityData[measureIndex][lane][divEditLineTime - imosTime[measureIndex]] = q; };
+			auto posSub = [&](int lane, Quot q) { divPositionData[measureIndex][lane][divEditLineTime - imosTime[measureIndex]] = q; };
+			auto velInfo = [&](int lane) {return divVelocityData[measureIndex][lane][divEditLineTime - imosTime[measureIndex]]; };
+			auto posDelete = [&](int lane) {divPositionData[measureIndex][lane].erase(divEditLineTime - imosTime[measureIndex]); };
+			auto velDelete = [&](int lane) {divVelocityData[measureIndex][lane].erase(divEditLineTime - imosTime[measureIndex]); };
+			std::set<Quot> posMap, velMap;
+			for (int lane = 0; lane < divNum; lane++) {
+				if (divEditIndex[lane]) {
+					if (posFlag(lane))posMap.insert(posInfo(lane));
+					if (velFlag(lane))velMap.insert(velInfo(lane));
+				}
+			}
+			String posStr, velStr;
+			if (!tesPosition.active) {
+				if (posMap.empty()) {
+					posStr = tesPosition.text = U"";
+				}
+				else if (posMap.size() == 1) {
+					posStr = tesPosition.text = posMap.begin()->parse();
+				}
+				else {
+					posStr = tesPosition.text = U"...";
+				}
+			}
+			if (!tesVelocity.active) {
+				if (velMap.empty()) {
+					velStr = tesVelocity.text = U"";
+				}
+				else if (velMap.size() == 1) {
+					velStr = tesVelocity.text = velMap.begin()->parse();
+				}
+				else {
+					velStr = tesVelocity.text = U"...";
+				}
+			}
+
+			boxFont(U"Pos:").draw(Vec2(20, 100));
+			boxFont(U"Vel:").draw(Vec2(20, 140));
+			SimpleGUI::TextBox(tesPosition, Vec2(80, 100), 156);
+			SimpleGUI::TextBox(tesVelocity, Vec2(80, 140), 156);
+
+			if (!tesPosition.active) {
+				if (tesPosition.text.empty()) {
+					for (int lane = 0; lane < divNum; lane++) {
+						if (divEditIndex[lane]) {
+							if (posFlag(lane))posDelete(lane);
+							recalculation = true;
+						}
+					}
+				}
+				else if (Quot::isParsable(tesPosition.text)) {
+					for (int lane = 0; lane < divNum; lane++) {
+						if (divEditIndex[lane]) {
+							posSub(lane, Quot(tesPosition.text));
+							recalculation = true;
+						}
+					}
+				}
+				else {
+					tesPosition.text = posStr;
+				}
+			}
+			else {
+				isAllTextboxInactive = false;
+			}
+
+			if (!tesVelocity.active) {
+				if (tesVelocity.text.empty()) {
+					for (int lane = 0; lane < divNum; lane++) {
+						if (divEditIndex[lane]) {
+							if (velFlag(lane))velDelete(lane);
+						}
+					}
+				}
+				else if (Quot::isParsable(tesVelocity.text)) {
+					for (int lane = 0; lane < divNum; lane++) {
+						if (divEditIndex[lane]) {
+							velSub(lane, Quot(tesVelocity.text));
+							recalculation = true;
+						}
+					}
+				}
+				else {
+					tesVelocity.text = velStr;
+				}
+			}
+			else {
+				isAllTextboxInactive = false;
+			}
 
 		}
 	}
 	else {
 		//Tabメニューが開いていないときには小節編集ボックスを更新する
 		if (!measureEditWindow.isDeadFlag()) {
-			if (measureEditWindow.update()) {
+			if (measureEditWindow.isTextboxActive()) {
 				isAllTextboxInactive = false;
 			}
 			else {
@@ -152,7 +257,15 @@ void Chart::UpdateEditor() {
 					String sBPM = measureEditWindow.getValue(U"bpm");
 					if (sBPM.empty())nowMeasure.erase(U"bpm");
 					else {
-						auto tmp = ParseOpt<double>(sBPM);
+						std::function<s3d::Optional<double>(StringView)> ParseOptDouble = [](StringView sv)->Optional<double> {
+							try {
+								return ParseOpt<double>(sv);
+							}
+							catch (Error&) {
+								return none;
+							};
+						};
+						auto tmp = ParseOptDouble(sBPM);
 						if (tmp != none && tmp.value() > 0) {
 							hasValueChanged |= (nowMeasure[U"bpm"] != sBPM);
 							nowMeasure[U"bpm"] = sBPM;
@@ -285,8 +398,6 @@ void Chart::UpdateEditor() {
 						measureEditWindow.addButton(buttonStringCut);
 						measureEditWindow.addButton(buttonStringPaste);
 						measureEditWindow.addButton(buttonStringClear);
-						//ボタンやラベルなどを更新する
-						measureEditWindow.update();
 					}
 				}
 			}
@@ -472,13 +583,25 @@ void Chart::UpdateEditor() {
 	}
 
 
+	//スクロール位置によって小節ウィンドウの位置を更新
+	if (measureEditWindow.isDeadFlag()) {
+		measureEditIndex = -1;
+	}
+	if (measureEditIndex >= 0) {
+		measureEditWindow.changePosition({ 0.0, toY(Quot(imosTime[measureEditIndex])) });
+		measureEditWindow.changeSize({ leftMargin, toY(imosTime[measureEditIndex]) - toY(imosTime[measureEditIndex + 1]) });
+	}
+
+	//小節ウィンドウを更新
+	measureEditWindow.update();
+
 	//小節ウィンドウのボタンに関する操作
 	if (measureEditIndex >= 0) {
 		//マウス入力にもキーボード入力にも対応する
-		bool copyFlag = measureEditWindow.getButtonFlag(buttonStringCopy) || (KeyControl.pressed() && KeyC.down());
-		bool cutFlag = measureEditWindow.getButtonFlag(buttonStringCut) || (KeyControl.pressed() && KeyX.down());
-		bool pasteFlag = measureEditWindow.getButtonFlag(buttonStringPaste) || (KeyControl.pressed() && KeyV.down());
-		bool clearFlag = measureEditWindow.getButtonFlag(buttonStringClear) || (KeyControl.pressed() && KeyDelete.down());
+		bool copyFlag = measureEditWindow.getButtonFlag(buttonStringCopy) || (isAllTextboxInactive && KeyControl.pressed() && KeyC.down());
+		bool cutFlag = measureEditWindow.getButtonFlag(buttonStringCut) || (isAllTextboxInactive && KeyControl.pressed() && KeyX.down());
+		bool pasteFlag = measureEditWindow.getButtonFlag(buttonStringPaste) || (isAllTextboxInactive && KeyControl.pressed() && KeyV.down());
+		bool clearFlag = measureEditWindow.getButtonFlag(buttonStringClear) || (isAllTextboxInactive && KeyControl.pressed() && KeyDelete.down());
 
 		//Copyボタンで範囲をコピーする
 		if (copyFlag || cutFlag) {
@@ -504,6 +627,10 @@ void Chart::UpdateEditor() {
 					laneDisplayData.erase(laneDisplayData.begin() + measureEditIndex, laneDisplayData.begin() + measureSelectUntilIndex + 1);
 					divPositionData.erase(divPositionData.begin() + measureEditIndex, divPositionData.begin() + measureSelectUntilIndex + 1);
 					divVelocityData.erase(divVelocityData.begin() + measureEditIndex, divVelocityData.begin() + measureSelectUntilIndex + 1);
+					//情報編集ウィンドウを閉じる
+					measureEditWindow.deadFlag(true);
+					measureEditIndex = -1;
+					measureSelectUntilIndex = -1;
 				}
 			}
 			//再計算する
@@ -525,23 +652,19 @@ void Chart::UpdateEditor() {
 		//Clearボタンで小節の内容を削除する(measureAttributeのみ変更なし)
 		if (clearFlag) {
 			for (int i = measureEditIndex; i <= measureSelectUntilIndex; i++) {
-				for (auto& elm : laneNoteData[i])elm.clear();
-				for (auto& elm : laneDisplayData[i])elm.clear();
-				for (auto& elm : divPositionData[i])elm.clear();
-				for (auto& elm : divVelocityData[i])elm.clear();
+				//Shiftで装飾を消す
+				if (KeyShift.pressed()) {
+					for (auto& elm : laneDisplayData[i])elm.clear();
+				}
+				else {
+					for (auto& elm : laneNoteData[i])elm.clear();
+				}
+				//for (auto& elm : divPositionData[i])elm.clear();
+				//for (auto& elm : divVelocityData[i])elm.clear();
 			}
 			//再計算する
 			recalculation = true;
 		}
-	}
-
-	//スクロール位置によって小節ウィンドウの位置を更新
-	if (measureEditWindow.isDeadFlag()) {
-		measureEditIndex = -1;
-	}
-	if (measureEditIndex >= 0) {
-		measureEditWindow.changePosition({ 0.0, toY(Quot(imosTime[measureEditIndex])) });
-		measureEditWindow.changeSize({ leftMargin, toY(imosTime[measureEditIndex]) - toY(imosTime[measureEditIndex + 1]) });
 	}
 
 	//再計算が必要だったらする

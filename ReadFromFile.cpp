@@ -23,7 +23,6 @@ void Chart::ReadFromFile() {
 		}
 		{
 			int laneIndex = 0;
-			laneNoteData.resize(divNum);
 			for (auto&& clump : measureObject[U"laneNote"].arrayView()) {
 				for (auto&& elm : clump.objectView()) {
 					laneNoteData[measureIndex][laneIndex][Quot(elm.name)] = elm.value.get<String>();
@@ -33,7 +32,6 @@ void Chart::ReadFromFile() {
 		}
 		{
 			int laneIndex = 0;
-			laneDisplayData.resize(divNum);
 			for (auto&& clump : measureObject[U"laneDisp"].arrayView()) {
 				for (auto&& elm : clump.objectView()) {
 					laneDisplayData[measureIndex][laneIndex][Quot(elm.name)] = elm.value.get<String>();
@@ -43,7 +41,6 @@ void Chart::ReadFromFile() {
 		}
 		{
 			int laneIndex = 0;
-			divPositionData.resize(divNum);
 			for (auto&& clump : measureObject[U"divTheta"].arrayView()) {
 				for (auto&& elm : clump.objectView()) {
 					divPositionData[measureIndex][laneIndex][Quot(elm.name)] = Quot(elm.value.get<String>());
@@ -53,7 +50,6 @@ void Chart::ReadFromFile() {
 		}
 		{
 			int laneIndex = 0;
-			divVelocityData.resize(divNum);
 			for (auto&& clump : measureObject[U"divOmega"].arrayView()) {
 				for (auto&& elm : clump.objectView()) {
 					divVelocityData[measureIndex][laneIndex][Rational(elm.name)] = Quot(elm.value.get<String>());

@@ -1,5 +1,6 @@
 
 #include "Chart.hpp"
+#include "GreatEffect.h"
 
 void Chart::Show() const {
 	ShowEditor();
@@ -57,9 +58,22 @@ void Chart::ShowPlayer() const {
 	for (auto measure : step(measureNum)) {
 		for (auto lane : step(divNum)) {
 			for (auto elm : laneNoteData[measure][lane]) {
-				Quot time = imosHSTime[measure] + elm.first;
-				//すでに過ぎ去ったノーツの場合は描画をしない
-				if (timeToClock(time) <= currentPlayClock)continue;
+				Quot time = imosTime[measure] + elm.first;
+				//このフレームで消えたノーツはタップエフェクトを加える
+				auto clockTime = timeToClock(time);
+				if (previousPlayClock < clockTime && clockTime <= currentPlayClock) {
+					double leftPos = divPosReal(lane, clockToRealTime(currentPlayClock));
+					double rightPos = divPosReal((lane + 1) % divNum, clockToRealTime(currentPlayClock));
+					//極座標に変換
+					double radius = (timeToHSTime(time).real() - realTimeToRealHSTime(clockToRealTime(currentPlayClock))) * noteSpeed + polygonRadius;
+					double realThetaLeft = leftPos * Math::Pi * 2;
+					double realThetaRight = rightPos * Math::Pi * 2;
+					//エフェクトを追加
+					greatEffect.add<GreatEffect>((polToRec(radius, realThetaLeft) + polToRec(radius, realThetaRight)) / 2, U"PERFECT");
+				}
+				//すでに過ぎ去ったノーツ、まだ描画するには早いノーツの場合は描画をしない
+				if (clockTime <= currentPlayClock || currentPlayClock + renderNoteMilliseconds <= clockTime)continue;
+
 				if (noteColor.contains(elm.second)) {
 					double leftPos = divPosReal(lane, clockToRealTime(currentPlayClock));
 					double rightPos = divPosReal((lane + 1) % divNum, clockToRealTime(currentPlayClock));
@@ -81,6 +95,10 @@ void Chart::ShowPlayer() const {
 		}
 	}
 	//小節線を描画する
+
+
+	//エフェクトを描画
+	greatEffect.update();
 
 }
 

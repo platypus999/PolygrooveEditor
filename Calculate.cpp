@@ -7,7 +7,8 @@ void Chart::calculate() {
 
 	//‰Šú‰»
 	imosTime.clear();
-	imosHSTime.clear();
+	imosHSTime.clear(); 
+	HSArray.clear();
 	imosClock.clear();
 	splitVector.clear();
 	laneVector.clear();

@@ -42,7 +42,7 @@ public:
 	//画面中央の多角形の中心からのピクセル数
 	const double polygonRadius = 100;
 	//一小節に動くノーツの速さ(ピクセル/小節)
-	const double noteSpeed = 400;
+	const double noteSpeed = 900;
 
 	//数字キーの分割数ショートカット
 	const std::map<Key, int> numberShortcut = {
@@ -141,6 +141,8 @@ public:
 	const String buttonStringCut = U"Cut";
 	const String buttonStringPaste = U"Paste";
 	const String buttonStringClear = U"Clear";
+	//譜面を再生中に実際に表示するノーツの範囲(ミリ秒)
+	const double renderNoteMilliseconds = 5000.0;
 
 
 private:
@@ -165,13 +167,14 @@ private:
 	TextEditState tesGranularity;
 	TextEditState tesNowNoteString;
 	TextEditState tesNowDispString;
+	TextEditState tesPosition, tesVelocity;
 	//小節情報のGUIウィンドウ
 	GUIWindow measureEditWindow;
 	//編集している小節情報の番号
 	int measureEditIndex;
 	//編集している小節情報の選択範囲にかぶる一番最後の番号
 	int measureSelectUntilIndex;
-	
+
 	//クリックすると配置される装飾の文字列
 	String nowDispString;
 	//クリックすると配置されるノーツの文字列
@@ -190,14 +193,26 @@ private:
 	double currentPlayClock;
 	//再生開始した場所
 	double startPlayClock;
+	//直前のフレームで再生した場所
+	double previousPlayClock;
 	//ストップウォッチ
 	Stopwatch stopwatch;
+	//分割線のうち選択されているものはtrue、されていないものはfalse
+	Array<bool> divEditIndex;
 	//コピーした小節情報のデータ
 	std::vector<std::map<String, String>>copyboardMeasureAttribute;
 	std::vector<std::vector<std::map<Quot, String>>>copyboardLaneNoteData;
 	std::vector<std::vector<std::map<Quot, String>>>copyboardLaneDisplayData;
 	std::vector<std::vector<std::map<Quot, Quot>>>copyboardDivPositionData;
 	std::vector<std::vector<std::map<Quot, Quot>>>copyboardDivVelocityData;
+
+	//判定文字のエフェクト
+	Effect greatEffect;
+	//コンボ回数
+	int comboCounter;
+
+	//曲データ
+	Audio backgroundMusic = Audio(U"BabySteps.mp3");
 
 	//----------------------------------------
 	//直接的なデータ
@@ -257,8 +272,6 @@ private:
 	//ノーツや分割点などが置けるtimeを昇順にまとめた配列(double版)
 	std::vector<double>tickTimeReal;
 
-	//分割線のうち選択されているものはtrue、されていないものはfalse
-	Array<bool> divEditIndex;
 
 
 	//直接的なデータと分割数に関する配列をすべて初期化(引数のサイズに変更)
@@ -369,7 +382,7 @@ private:
 	}
 	//時間をHS込みの時間に変更する(double版)
 	inline double realTimeToRealHSTime(double time) const {
-		int index = upper_bound(imosTime.begin(), imosTime.end(), time, [&](const double& d,const Quot& q) {return d < q.real(); }) - imosTime.begin() - 1;
+		int index = upper_bound(imosTime.begin(), imosTime.end(), time, [&](const double& d, const Quot& q) {return d < q.real(); }) - imosTime.begin() - 1;
 		if (index == measureNum)return imosHSTime.back().real();
 		return imosHSTime[index].real() - (imosTime[index].real() - time) * HSArray[index].real();
 	}

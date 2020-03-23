@@ -239,6 +239,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Chart.hpp" />
+    <ClInclude Include="GreatEffect.h" />
     <ClInclude Include="JSONWriter.hpp" />
     <ClInclude Include="rapidjson.h" />
     <ClInclude Include="Rational.hpp" />
